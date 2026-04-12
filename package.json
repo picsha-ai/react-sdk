@@ -1,0 +1,30 @@
+{
+    "name": "@picsha-ai/react",
+    "version": "1.0.0",
+    "description": "React SDK for Picsha AI Delivery and Uploads",
+    "main": "dist/index.js",
+    "module": "dist/index.mjs",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsup src/index.ts --format cjs,esm --dts",
+        "dev": "tsup src/index.ts --format cjs,esm --dts --watch"
+    },
+    "peerDependencies": {
+        "react": ">=18.0.0",
+        "react-dom": ">=18.0.0"
+    },
+    "devDependencies": {
+        "@types/react": "^18.0.0",
+        "@types/react-dom": "^18.0.0",
+        "tsup": "^8.0.2",
+        "typescript": "^5.0.0"
+    },
+    "dependencies": {
+        "@uppy/aws-s3": "^5.1.0",
+        "@uppy/core": "^5.2.0",
+        "@uppy/dashboard": "^5.1.1",
+        "@uppy/drag-drop": "^5.0.0",
+        "@uppy/react": "^5.2.0",
+        "@uppy/tus": "^5.1.1"
+    }
+}
