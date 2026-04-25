@@ -24,7 +24,7 @@ export const PicshaUploadWidget: React.FC<PicshaUploadWidgetProps> = ({
     getToken,
     onUploadSuccess,
     onError,
-    maxFileSize = 1000 * 1024 * 1024, // 1GB default
+    maxFileSize = 2 * 1024 * 1024 * 1024, // 2GB default
     theme = 'dark',
     width = '100%',
     height = 450,
