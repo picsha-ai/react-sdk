@@ -142,13 +142,18 @@ export const PicshaUploadWidget: React.FC<PicshaUploadWidgetProps> = ({
 
                     const cleanUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
                     const baseUrl = cleanUrl.replace(/\/v1$/, '');
+                    const currentConfig = configRef.current as any || {};
+                    const { tags, metadata, ...baseConfig } = currentConfig;
+
                     const registerRes = await fetch(`${baseUrl}/v1/assets`, {
                         method: 'POST',
                         headers,
                         body: JSON.stringify({
                             s3Key: key,
                             originalName: originalName,
-                            config: configRef.current
+                            config: baseConfig,
+                            tags: tags?.length ? tags : undefined,
+                            metadata: metadata && Object.keys(metadata).length ? metadata : undefined
                         })
                     });
 

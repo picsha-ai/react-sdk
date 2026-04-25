@@ -30,6 +30,7 @@ export type OverlayConfig = TextOverlay | ImageOverlay;
 
 export interface PicshaImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
     deliveryEndpoint: string;
+    imageDeliveryEndpoint?: string;
     assetId?: string;
     url?: string;
     width?: number;
@@ -55,6 +56,7 @@ export interface PicshaImageProps extends React.ImgHTMLAttributes<HTMLImageEleme
 
 export const PicshaImage: React.FC<PicshaImageProps> = ({
     deliveryEndpoint,
+    imageDeliveryEndpoint,
     assetId,
     url,
     width,
@@ -81,7 +83,11 @@ export const PicshaImage: React.FC<PicshaImageProps> = ({
     let baseUrl = deliveryEndpoint.replace(/\/+$/, '').replace(/\/v1$/, '');
 
     if (assetId) {
-        baseUrl += `/v1/assets/${assetId}/render`;
+        if (imageDeliveryEndpoint) {
+            baseUrl = imageDeliveryEndpoint.replace(/\/+$/, '') + `/render/${assetId}`;
+        } else {
+            baseUrl += `/v1/assets/${assetId}/render`;
+        }
     } else if (url) {
         baseUrl += `/v1/fetch`;
     } else {
