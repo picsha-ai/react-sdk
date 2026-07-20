@@ -1,4 +1,5 @@
 import React from 'react';
+import { buildPicshaQueryParams, hasGenerativeParams } from '../buildParams';
 
 export interface TextOverlay {
     type: 'text';
@@ -46,12 +47,35 @@ export interface PicshaImageProps extends React.ImgHTMLAttributes<HTMLImageEleme
     background?: string;
     removeBackground?: boolean;
     generativeRemove?: string;
+    /** MIMI natural-language edit prompt (standard 2K tier by default). */
+    mimi?: string;
+    /** MIMI quality tier: 'lite' (fast 1K), 'standard' (2K, default), '4k' (native 4K). */
+    mimiMode?: 'lite' | 'standard' | '4k';
+    /** Free preview-faithful export upscale, one tier up: '4k' on standard, '2k' on lite. */
+    upscale?: '2k' | '4k';
+    /** MIMI generative background swap prompt — subject preserved, background generated. */
+    mimiBg?: string;
     overlays?: OverlayConfig[];
     kernel?: 'nearest' | 'cubic' | 'mitchell' | 'lanczos2' | 'lanczos3';
     withoutEnlargement?: boolean;
     withoutReduction?: boolean;
     force?: boolean;
     cb?: string;
+    /**
+     * Delivery signature for generative props (mimi, mimiBg, generativeRemove,
+     * removeBackground) — anonymous generative requests are rejected with 401.
+     * Mint it server-side via POST /v1/assets/{id}/sign-delivery, passing
+     * `buildPicshaQueryParams(props)` as queryParams so the signed permutation
+     * matches this component's URL exactly. Appended verbatim as `sig`.
+     */
+    sig?: string;
+    /**
+     * A complete, already-signed delivery URL (e.g. sign-delivery's signedUrl,
+     * prefixed with your delivery origin). When set, it is rendered as-is and
+     * every other transformation prop is ignored — the simplest correct way to
+     * show a generative render on a public page.
+     */
+    signedUrl?: string;
 }
 
 export const PicshaImage: React.FC<PicshaImageProps> = ({
@@ -72,14 +96,26 @@ export const PicshaImage: React.FC<PicshaImageProps> = ({
     background,
     removeBackground,
     generativeRemove,
+    mimi,
+    mimiMode,
+    upscale,
+    mimiBg,
     overlays,
     kernel,
     withoutEnlargement,
     withoutReduction,
     force,
     cb,
+    sig,
+    signedUrl,
     ...imgProps
 }) => {
+    // A pre-signed URL is authoritative: render it untouched so the signature
+    // (which covers the exact query permutation) cannot be invalidated.
+    if (signedUrl) {
+        return <img src={signedUrl} {...imgProps} />;
+    }
+
     let baseUrl = deliveryEndpoint.replace(/\/+$/, '').replace(/\/v1$/, '');
 
     if (assetId) {
@@ -90,44 +126,34 @@ export const PicshaImage: React.FC<PicshaImageProps> = ({
         }
     } else if (url) {
         baseUrl += `/v1/fetch`;
+        console.warn(
+            'PicshaImage: the `url` prop proxies through /v1/fetch, which requires authentication ' +
+            'and cannot be called from the browser. Ingest the external URL server-side instead ' +
+            '(POST /v1/assets with a url), or point deliveryEndpoint at your own authenticated proxy.'
+        );
     } else {
         console.warn('PicshaImage: You must provide either an assetId or a url');
         return null;
     }
 
-    const params = new URLSearchParams();
+    const transformProps = {
+        url, width, height, aspectRatio, blur, radius, format, fit, crop,
+        quality, position, background, removeBackground, generativeRemove,
+        mimi, mimiMode, upscale, mimiBg, overlays, kernel,
+        withoutEnlargement, withoutReduction, force, cb,
+    };
 
-    if (url) params.append('url', url);
-    if (width !== undefined) params.append('w', width.toString());
-    if (height !== undefined) params.append('h', height.toString());
-    if (aspectRatio) params.append('ar', aspectRatio);
-    if (blur !== undefined) params.append('blur', blur.toString());
-    if (radius !== undefined) params.append('r', radius.toString());
-    if (format) params.append('fmt', format);
-    if (fit) params.append('fit', fit);
-    if (crop) params.append('crop', crop);
-    if (quality !== undefined) params.append('q', quality.toString());
-    if (position) params.append('pos', position);
-    if (background) params.append('bg', background);
-    if (removeBackground) params.append('bg_rem', 'true');
-    if (generativeRemove) params.append('gen_rem', generativeRemove);
-    if (kernel) params.append('k', kernel);
-    if (withoutEnlargement) params.append('no_enlarge', 'true');
-    if (withoutReduction) params.append('no_reduce', 'true');
-    if (force) params.append('force', 'true');
-    if (cb) params.append('_cb', cb);
-
-    if (overlays && overlays.length > 0) {
-        // We use base64 encoding to keep the URL safe and beautiful
-        const jsonStr = JSON.stringify(overlays);
-        // Base64 encode in browser-safe way (we can use btoa, since this runs in the browser)
-        try {
-            const b64 = btoa(unescape(encodeURIComponent(jsonStr)));
-            params.append('o', b64);
-        } catch (e) {
-            console.error('PicshaImage: Failed to encode overlays', e);
-        }
+    if (hasGenerativeParams(transformProps) && !sig) {
+        console.warn(
+            'PicshaImage: generative props (mimi, mimiBg, generativeRemove, removeBackground) require ' +
+            'authorization — anonymous requests are rejected with 401. Mint a signature server-side via ' +
+            'POST /v1/assets/{id}/sign-delivery (use buildPicshaQueryParams to match this exact permutation) ' +
+            'and pass it as the `sig` prop, or pass the full `signedUrl`.'
+        );
     }
+
+    const params = new URLSearchParams(buildPicshaQueryParams(transformProps));
+    if (sig) params.append('sig', sig);
 
     const queryString = params.toString();
     const finalSrc = queryString ? `${baseUrl}?${queryString}` : baseUrl;

@@ -1,10 +1,13 @@
 {
     "name": "@picsha-ai/react",
-    "version": "1.0.0",
+    "version": "2.1.0",
     "description": "React SDK for Picsha AI Delivery and Uploads",
     "main": "dist/index.js",
     "module": "dist/index.mjs",
     "types": "dist/index.d.ts",
+    "files": [
+        "dist"
+    ],
     "scripts": {
         "build": "tsup src/index.ts --format cjs,esm --dts",
         "dev": "tsup src/index.ts --format cjs,esm --dts --watch"
