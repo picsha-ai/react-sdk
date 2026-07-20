@@ -3,6 +3,12 @@ import Uppy from '@uppy/core';
 import AwsS3 from '@uppy/aws-s3';
 import Tus from '@uppy/tus';
 import Dashboard from '@uppy/react/dashboard';
+import RemoteSources, { type AvailablePluginsKeys } from '@uppy/remote-sources';
+
+/** Cloud sources supported by the installed @uppy/remote-sources version
+ *  (currently: Box, Dropbox, Facebook, GoogleDrive, Instagram, OneDrive,
+ *  Unsplash, Url, Zoom). */
+export type PicshaRemoteSource = AvailablePluginsKeys;
 
 export interface PicshaUploadWidgetProps {
     apiUrl: string;
@@ -17,6 +23,20 @@ export interface PicshaUploadWidgetProps {
     useResumable?: boolean;
     orgId?: string;
     config?: any;
+    /**
+     * URL of a deployed Uppy Companion server. When set, the Dashboard shows
+     * cloud import tabs (Dropbox, Google Drive, ...) alongside local files.
+     * Companion fetches remote files server-side and pushes them through the
+     * same upload path, so per-provider OAuth apps must be configured on the
+     * Companion deployment. Omit to keep local-only upload.
+     */
+    companionUrl?: string;
+    /**
+     * Which cloud sources to offer when companionUrl is set. Each source must
+     * also have credentials configured on the Companion server. Defaults to
+     * ['Dropbox', 'GoogleDrive', 'Url'].
+     */
+    companionSources?: PicshaRemoteSource[];
 }
 
 export const PicshaUploadWidget: React.FC<PicshaUploadWidgetProps> = ({
@@ -32,6 +52,8 @@ export const PicshaUploadWidget: React.FC<PicshaUploadWidgetProps> = ({
     useResumable = false,
     orgId,
     config = {},
+    companionUrl,
+    companionSources = ['Dropbox', 'GoogleDrive', 'Url'],
 }) => {
     const [uppy] = useState(() => {
         const uppyInstance = new Uppy({
@@ -107,6 +129,13 @@ export const PicshaUploadWidget: React.FC<PicshaUploadWidgetProps> = ({
                         throw err;
                     }
                 },
+            });
+        }
+
+        if (companionUrl) {
+            uppyInstance.use(RemoteSources, {
+                companionUrl,
+                sources: companionSources,
             });
         }
 

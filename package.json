@@ -1,6 +1,6 @@
 {
     "name": "@picsha-ai/react",
-    "version": "2.1.0",
+    "version": "2.2.0",
     "description": "React SDK for Picsha AI Delivery and Uploads",
     "main": "dist/index.js",
     "module": "dist/index.mjs",
@@ -28,6 +28,7 @@
         "@uppy/dashboard": "^5.1.1",
         "@uppy/drag-drop": "^5.0.0",
         "@uppy/react": "^5.2.0",
+        "@uppy/remote-sources": "^3.1.0",
         "@uppy/tus": "^5.1.1"
     }
 }
